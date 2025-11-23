@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import ProductManager from '../ProductManager.js';
+import CartManager from "../CartManager.js"
+
 
 
 const router = Router();
 
 const productManager = new ProductManager('src/data/products.json');
+const cartManager = new CartManager('src/data/carts.json')
 
 
 router.get('/', async (req, res) => {
@@ -14,12 +17,15 @@ router.get('/', async (req, res) => {
     } catch (error) {
         res.status(500).json({ status: "error", message: error.message });
     
-    }  
+    } 
 });
 
 
 router.get('/:pid', async (req, res) => {
-    const { pid } = req.params;
+    const pid = parseInt(req.params.pid);
+    if (isNaN(pid)) {
+        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
+    }
     try {
         const product = await productManager.getProductById(pid);
         if (product) {
@@ -29,7 +35,7 @@ router.get('/:pid', async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ status: "error", message: error.message });
-    }    
+    } 
 });
 
 
@@ -48,7 +54,10 @@ router.post('/', async (req, res) => {
 
 
 router.put('/:pid', async (req, res) => {
-    const { pid } = req.params;
+    const pid = parseInt(req.params.pid);
+    if (isNaN(pid)) {
+        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
+    }
     const updatedFields = req.body;
     try {
         const updatedProduct = await productManager.updateProduct(pid, updatedFields);
@@ -61,11 +70,14 @@ router.put('/:pid', async (req, res) => {
     }catch (error) {
         res.status(400).json({status:"error", message: error.message });
     }
-});  
+}); 
 
 
 router.delete('/:pid', async (req, res) => {
-    const { pid } = req.params;
+    const pid = parseInt(req.params.pid);
+    if (isNaN(pid)) {
+        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
+    }
     try {
         const wasDeleted = await productManager.deleteProduct(pid);
         if (wasDeleted) {

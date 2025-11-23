@@ -1,10 +1,10 @@
 import { Router } from "express"
-import CartManager  from "../CartManager"
-import ProductManager from "../ProductManager"
+import CartManager from "../CartManager.js"
+import ProductManager from "../ProductManager.js"
 
 const router = Router()
-const cartManager = new CartManager('data/carts.json')
-const productManager = new ProductManager('data/products.json')
+const cartManager = new CartManager('src/data/carts.json')
+const productManager = new ProductManager('src/data/products.json')
 
 router.post('/', async (req, res) => {
     try {
@@ -13,7 +13,6 @@ router.post('/', async (req, res) => {
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message})
     }
-        
 })
 
 router.get('/:cid', async (req, res) => {
@@ -23,7 +22,7 @@ router.get('/:cid', async (req, res) => {
         if (cart) {
             res.json({ status: 'success', payload: cart.products})
         } else {
-            res.status(400).json({ status: "error", message: `Carrito con ID ${cid} no encontrado`})
+            res.status(404).json({ status: "error", message: `Carrito con ID ${cid} no encontrado`})
         }
     } catch (error) {
         res.status(500).json({ status: "error", message: error.message })
@@ -32,20 +31,20 @@ router.get('/:cid', async (req, res) => {
 
 router.post('/:cid/product/:pid', async (req, res) => {
     const { cid, pid } = req.params;
-    try { 
+    try {
         const product = await productManager.getProductById(pid)
         if (!product) {
-            return res.json(404).json({ status: "error", message:`Producto con ID ${pid} no existe.`})
+            return res.status(404).json({ status: "error", message:`Producto con ID ${pid} no existe.`})
         }
 
         const updatedCart = await cartManager.addProductToCart(cid, pid)
         res.json({ status: "success", payload: updatedCart})
     } catch (error) {
         if (error.message.includes('Carrito')) {
-            res.status(404).json({ status: "error", mesage: error.message})
+            res.status(404).json({ status: "error", message: error.message})
         } else {
             res.status(500).json({ status: "error", message: error.message})
-        }    
+        }
     }
 })
 

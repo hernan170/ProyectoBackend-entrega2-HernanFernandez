@@ -3,8 +3,10 @@ import handlebars from 'express-handlebars';
 import { Server } from 'socket.io';
 import http from 'http';
 import path from 'path';
+import cartsRouter from './routes/carts.router.js';
 import productsRouter from './routes/products.router.js';
 import viewsRouter from './routes/views.router.js';
+import CartManager from './CartManager.js';
 import ProductManager from './ProductManager.js';
 import { fileURLToPath } from 'url';
 
@@ -16,6 +18,7 @@ const app = express();
 const PORT = 8080;
 
 const productManager = new ProductManager('src/data/products.json');
+const cartManager = new CartManager('src/data/carts.json');
 
 const server = http.createServer(app); 
 
@@ -29,7 +32,8 @@ app.engine('handlebars', handlebars.engine());
 app.set('views', path.join(__dirname, 'views')); 
 app.set('view engine', 'handlebars');
 app.use('/', viewsRouter); 
-app.use('/api/products', productsRouter); 
+app.use('/api/products', productsRouter);
+app.use('/api/carts', cartsRouter);
 
 io.on('connection', (socket) => {
     console.log(`Nuevo cliente conectado: ${socket.id}`);

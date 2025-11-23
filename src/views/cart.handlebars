@@ -1,0 +1,35 @@
+<div class="container my-5">
+    <h1 class="mb-4 text-center">🛒 Contenido del Carrito #{{cartId}}</h1>
+    <p class="text-center text-muted">Añade productos usando el endpoint API POST /api/carts/{{cartId}}/product/:pid</p>
+    
+    {{#if isEmpty}}
+        <div class="alert alert-info text-center mt-4" role="alert">
+            Este carrito está vacío.
+        </div>
+    {{else}}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle shadow-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">ID Producto</th>
+                        <th scope="col">Título</th>
+                        <th scope="col">Precio Unitario</th>
+                        <th scope="col">Cantidad</th>
+                        <th scope="col">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each products}}
+                    <tr>
+                        <th scope="row">{{this.id}}</th>
+                        <td>{{this.title}}</td>
+                        <td>${{this.price}}</td>
+                        <td>{{this.quantity}}</td>
+                        <td>${{multiply this.price this.quantity}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    {{/if}}
+</div>
