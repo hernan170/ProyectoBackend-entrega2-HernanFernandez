@@ -1,52 +1,72 @@
 import { Router } from 'express';
-import ProductManager from '../ProductManager.js';
-import CartManager from "../CartManager.js"
+import ProductDAO from '../ProductDAO.js';
+
 
 
 
 const router = Router();
+const productDAO = new ProductDAO();
 
-const productManager = new ProductManager('src/data/products.json');
-const cartManager = new CartManager('src/data/carts.json')
 
 
 router.get('/', async (req, res) => {
+    const { limit = 10, page =1, sort, query } = req.query
     try {
-        const products = await productManager.getProducts();
-        res.json({ status: "success", payload: products });
+        const options = { limit: parseInt(limit), page: parseInt(page), sort: sort, query: query }
+        const productsData = await productDAO.getProducts(options) 
+        const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
+        const links = {prevLink: productsData.hasPrevPage ? `${baseUrl}?page=${productsData.prevPage}&limit=${limit}&sort=${sort || ''}&query=${query || ''}`: null,
+                       nextLink: productsData.hasNextPage ? `${baseUrl}?page=${productsData.nextPage}&limit=${limit}&sort=${sort || ''}&query=${query || ''}`: null}
+        res.status(200).json({
+            status: 'success',
+            payload: productsData.docs, 
+            totalPages: producstDataroductsData.totalPages,
+            prevPage: productsData.prevPage,
+            nextPage: productsData.nextPage,
+            page: productsData.page,
+            hasPrevPage: productsData.hasPrevPage,
+            hasNextPage: productsData.hasNextPage,
+            ...links
+        })
     } catch (error) {
-        res.status(500).json({ status: "error", message: error.message });
+        console.error('Error al obtener productos:', error)
+        res.status(500).json({ status: "error", message: 'Error del servidor al obtener productos.' })
     
     } 
-});
+})
 
 
 router.get('/:pid', async (req, res) => {
-    const pid = parseInt(req.params.pid);
-    if (isNaN(pid)) {
-        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
-    }
-    try {
-        const product = await productManager.getProductById(pid);
-        if (product) {
-            res.json({ status: "success", payload: product });
-        } else {
-            res.status(404).json({ status: "error", message: `Producto con id ${pid} no encontrado` });
-        }
+    const { pid } = req.params
+      try {
+        const product = await productDAO.getProductById(pid);
+        if (!product) {
+            return res.status(404).json({ status: "error", message: `Producto con id ${pid} no encontrado` });
+        } 
+            res.status(200).json({ status: "success", payload: product });
+        
     } catch (error) {
-        res.status(500).json({ status: "error", message: error.message });
+        console.error( `Error al obtener producto ${pid}:` , error)
+        res.status(500).json({ status: "error", message: 'Error del servidor al obtener el producto.' });
     } 
 });
 
 
 router.post('/', async (req, res) => {
     
-    const productData = req.body;
+    const productData = req.body
+    if (!productData.title || !productData.price || !productData.code) {
+        return res.status(400).json({ status: "error", message: "Faltan campos obligatorios: title, price, code." });
+    }
     try {
-        const newProduct = await productManager.addProduct(productData);
-        res.status(201).json({ status: "success", payload: newProduct});
+        const newProduct = await productDAO.addProduct(productData)
+        if(!newProduct) {
+            return res.status(400).json({ status: "error", message: "El producto con ese codigo ya existente." });
+        }
+        res.status(201).json({ status: "success", message: 'Producto agregado exitosamente.', payload: newProduct});
     } catch (error) {
-        res.status(400).json({ status: "error", message: error.message });
+        console.error('Error al crear producto:', error);
+        res.status(500).json({ status: "error", message: 'Error del servidor al agregar el producto' });
 
     }
 
@@ -54,20 +74,13 @@ router.post('/', async (req, res) => {
 
 
 router.put('/:pid', async (req, res) => {
-    const pid = parseInt(req.params.pid);
-    if (isNaN(pid)) {
-        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
+    const { pid } = req.params
+    const updateData = req.body
+    if (!updateProduct) {
+        return res.status(404).json({ status: "error", message: `Producto con id ${pid} no encontrado.` });
     }
-    const updatedFields = req.body;
-    try {
-        const updatedProduct = await productManager.updateProduct(pid, updatedFields);
-        if (updatedProduct) {
-            res.json({status: "success", payload: updatedProduct});
-        } else {
-            res.status(404).json({status: "error", message: `Producto con id ${pid} no encontrado.`});
-        }
-
-    }catch (error) {
+    res.status(200).json({ status: "success", message: `Producto con id ${pid} actualizado.`, payload: updateProduct });
+ }catch (error) {
         res.status(400).json({status:"error", message: error.message });
     }
 }); 
