@@ -1,18 +1,20 @@
-import ProductModel from './models/product.model.js'
+import {ProductModel} from './models/product.model.js'
 
 class ProductDAO {
-
-    async getProducts(limit = 10, page = 1, sort = null, query = {}) {
+   
+    async getProducts(options = {}) { 
+    
+        const { limit = 10, page = 1, sort = null, query = {} } = options;
         try {
-            const options = {
+            const paginateOptions = {
                 limit: limit,
                 page: page,
                 lean: true
             }
             if (sort) {
-                options.sort = { price: sort === 'asc' ? 1 : -1}
+                paginateOptions.sort = { price: sort === 'asc' ? 1 : -1}
             }
-            const products = await  ProductModel.paginate(query, options)
+            const products = await  ProductModel.paginate(query, paginateOptions)
             return{
                 status: 'success',
                 payload: products.docs,
@@ -61,7 +63,7 @@ class ProductDAO {
     async deleteProduct(id) {
         try {
             const deleteProduct = await ProductModel.findByIdAndDelete(id)
-            return !!result
+            return !!deleteProduct
         } catch (error) {
             console.error(`Error al eliminar producto (${id}):`, error)
             return false

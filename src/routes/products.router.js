@@ -14,13 +14,23 @@ router.get('/', async (req, res) => {
     try {
         const options = { limit: parseInt(limit), page: parseInt(page), sort: sort, query: query }
         const productsData = await productDAO.getProducts(options) 
+
         const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
-        const links = {prevLink: productsData.hasPrevPage ? `${baseUrl}?page=${productsData.prevPage}&limit=${limit}&sort=${sort || ''}&query=${query || ''}`: null,
-                       nextLink: productsData.hasNextPage ? `${baseUrl}?page=${productsData.nextPage}&limit=${limit}&sort=${sort || ''}&query=${query || ''}`: null}
-        res.status(200).json({
+        const sortParam = sort ? `&sort=${sort}` : '';
+        const queryParam = query ? `&query=${query}` : '';
+      
+
+       const links = {
+             prevLink: productsData.hasPrevPage 
+             ? `${baseUrl}?page=${productsData.prevPage}&limit=${limit}${sortParam}${queryParam}`: null,
+             nextLink: productsData.hasNextPage 
+             ? `${baseUrl}?page=${productsData.nextPage}&limit=${limit}${sortParam}${queryParam}` 
+             : null
+            }
+            res.status(200).json({
             status: 'success',
-            payload: productsData.docs, 
-            totalPages: producstDataroductsData.totalPages,
+            payload: productsData.payload, 
+            totalPages: productsData.totalPages,
             prevPage: productsData.prevPage,
             nextPage: productsData.nextPage,
             page: productsData.page,
@@ -76,31 +86,35 @@ router.post('/', async (req, res) => {
 router.put('/:pid', async (req, res) => {
     const { pid } = req.params
     const updateData = req.body
-    if (!updateProduct) {
+    if (updateData._id) delete updateData._id
+    try {
+        const updateProduct = await productDAO.updateProduct(pid, updateData);
+
+        if (!updateProduct) {
         return res.status(404).json({ status: "error", message: `Producto con id ${pid} no encontrado.` });
     }
     res.status(200).json({ status: "success", message: `Producto con id ${pid} actualizado.`, payload: updateProduct });
- }catch (error) {
-        res.status(400).json({status:"error", message: error.message });
+
+ } catch (error) {
+    console.error(`Error al actualizar producto ${pid}:`, error);
+        res.status(500).json({status:"error", message: 'Error del servidor al actualizar el producto.' });
     }
-}); 
+})
+
 
 
 router.delete('/:pid', async (req, res) => {
-    const pid = parseInt(req.params.pid);
-    if (isNaN(pid)) {
-        return res.status(400).json({ status: "error", message: "ID de producto inválido." });
-    }
+    const { pid } = req.params
     try {
-        const wasDeleted = await productManager.deleteProduct(pid);
-        if (wasDeleted) {
-            res.json({ status: "success", message: `Producto con id ${pid} eliminado.`});
-
-        } else {
-            res.status(404).json({status: "error", message: `Producto con id ${pid} no encontrado.`});
+        const result = await productDAO.deleteProduct(pid);
+        if (!result) {
+            return res.status(404).json({ status: "error", message: `Producto con id ${pid} no encontrado.` });
         }
+        res.status(200).json({ status: "success", message: `Producto con id ${pid} eliminado exitosamente.` });
+    
     } catch (error) {
-        res.status(500).json({ status: "error", message: error.message });
+        console.error(`Error al eliminar producto ${pid}:`, error);
+        res.status(500).json({ status: "error", message: 'Error del servidor al eliminar el producto' });
     }
     
 });

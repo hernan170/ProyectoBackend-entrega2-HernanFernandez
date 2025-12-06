@@ -1,6 +1,8 @@
 import mongoose from 'mongoose'
+import  mongoosePaginate from 'mongoose-paginate-v2'
 
 const cartCollection = 'carts'
+
 const cartSchema = new mongoose.Schema({
     products: {
         type: [
@@ -12,8 +14,8 @@ const cartSchema = new mongoose.Schema({
                 },
                 quantity: {
                     type: Number,
-                    required: true,
-                    min: 1
+                     default: 1
+                   
                 }
             }
         ],
@@ -21,11 +23,11 @@ const cartSchema = new mongoose.Schema({
     }
 })
 
-cartSchema.pre('findOne', function() {
+cartSchema.pre('find', function() {
     this.populate('products.product')
 })
 
-cartSchema.pre('find', function() {
+cartSchema.pre('findOne', function() {
     this.populate('products.product')
 })
 
